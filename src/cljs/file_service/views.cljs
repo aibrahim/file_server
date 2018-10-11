@@ -48,7 +48,7 @@
   [ant/breadcrumb {:separator ">"}
    (doall
     (for [{:keys [label path]} items]
-      [ant/breadcrumb-item {:href "#" :key (random-uuid) :on-click #(rf/dispatch [::events/read-path path])} label]))])
+      [ant/breadcrumb-item {:href "#" :key path :on-click #(rf/dispatch [::events/read-path path])} label]))])
 
 (defn get-extension [p]
   (let [ext (clojure.string/split p ".")]
