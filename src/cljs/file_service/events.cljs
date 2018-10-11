@@ -36,14 +36,24 @@
  (fn [db [_ response]]
    (.log js/console response)))
 
+;;helper
+(defn get-breadcrumb-items [path root-node]
+  (let [splitted-path (rest (clojure.string/split path "/"))
+        count-path (count splitted-path)
+        splitted-root  (rest (clojure.string/split root-node "/"))
+        count-root (count splitted-root)]
+    (mapv 
+     (fn [s]
+       (let [l (take s splitted-path)]
+         {:label (last l) :path (str "/" (clojure.string/join "/" l))})) (range count-root (inc count-path)))))
+
 (def breadcrumb-interceptor [(rf/path :breadcrumb)])
 
 (rf/reg-event-db
- ::add-breadcrumb
+ ::update-breadcrumb
  breadcrumb-interceptor
- (fn [breadcrumb [_ item]]
-   (let [item-name (-> item (clojure.string/split "/") last)]
-     (assoc breadcrumb item {:label item-name}))))
+ (fn [breadcrumb [_ path root-node]]
+   (assoc breadcrumb :items (get-breadcrumb-items path root-node))))
 
 (rf/reg-event-db
  ::reset-breadcrumb

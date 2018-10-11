@@ -42,13 +42,13 @@
        [ant/button {:on-click #(do
                                  (rf/dispatch [::events/read-path root-node])
                                  (rf/dispatch [::events/reset-breadcrumb])
-                                 (rf/dispatch [::events/add-breadcrumb root-node]))} "start"]]]]))
+                                 (rf/dispatch [::events/update-breadcrumb root-node root-node]))} "start"]]]]))
 
-(defn breadcrumb-ui [items]
+(defn breadcrumb-ui [{:keys [items]}]
   [ant/breadcrumb {:separator ">"}
    (doall
-    (for [[k {:keys [label]}] items]
-      [ant/breadcrumb-item {:href "#" :key k :on-click #(rf/dispatch [::events/read-path k])} label]))])
+    (for [{:keys [label path]} items]
+      [ant/breadcrumb-item {:href "#" :key (random-uuid) :on-click #(rf/dispatch [::events/read-path path])} label]))])
 
 (defn get-extension [p]
   (let [ext (clojure.string/split p ".")]
@@ -63,23 +63,24 @@
     {:icon type}))
 
 (defn files-ui [files]
-  [ant/row
-   (doall
-    (for [{:keys [path file-name type]} files]
-      (let [ext (get-extension file-name)
-            {:keys [icon color]} (find-icon-type type ext)]
-        [ant/col {:key path :span 8}
-         [:div {:on-click #(condp = type
-                             "folder" (do 
-                                        (rf/dispatch [::events/read-path path])
-                                        (rf/dispatch [::events/add-breadcrumb path]))
-                             "file" (cond
-                                      (some (fn [e] (= e ext)) text-formats) (rf/dispatch [::events/read-path path])
-                                      :else (.log js/console "Not supported!")
+  (let [root-node @(rf/subscribe [::subs/root-node])]
+    [ant/row
+     (doall
+      (for [{:keys [path file-name type]} files]
+        (let [ext (get-extension file-name)
+              {:keys [icon color]} (find-icon-type type ext)]
+          [ant/col {:key path :span 8}
+           [:div {:on-click #(condp = type
+                               "folder" (do 
+                                          (rf/dispatch [::events/read-path path])
+                                          (rf/dispatch [::events/update-breadcrumb path root-node]))
+                               "file" (cond
+                                        (some (fn [e] (= e ext)) text-formats) (rf/dispatch [::events/read-path path])
+                                        :else (.log js/console "Not supported!")
                                       ;;;;;; you can add more here ;;;;;;;
-                                      ))}
-          [ant/icon {:type icon :style {:font-size "25px" :color (or color default-files-color)}}]
-          [:h5 file-name]]])))])
+                                        ))}
+            [ant/icon {:type icon :style {:font-size "25px" :color (or color default-files-color)}}]
+            [:h5 file-name]]])))]))
 
 (defn dir-hierarchy []
   (let [{:keys [childrens] :as tree} @(rf/subscribe [::subs/dir-tree])
@@ -97,7 +98,7 @@
     [ant/col {:span 12}
      [ant/card
       [:h3 path] [:hr]
-      [:p
+      [:div
        [:pre content]]]]))
 
 (defn results-ui []

@@ -23,7 +23,7 @@
 
 (rf/reg-sub
  ::breadcrumb
- (fn [db]
+ (fn [db root-node]
    (:breadcrumb db)))
 
 (rf/reg-sub
